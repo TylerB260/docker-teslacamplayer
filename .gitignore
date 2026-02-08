@@ -45,3 +45,11 @@ Temporary Items
 
 # AI Files
 *.claude
+
+# published files
+publish/
+
+# Distribution builds
+dist/
+*.zip
+*.tar.gz

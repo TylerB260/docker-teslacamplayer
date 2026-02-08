@@ -22,13 +22,17 @@ builder.Services.AddTransient<IClipsService, ClipsService>();
 builder.Services.AddSingleton<IExportService, ExportService>();
 builder.Services.AddSingleton<ISeiParserService, SeiParserService>();
 builder.Services.AddTransient<IMp4TimingService, Mp4TimingService>();
-builder.Services.AddSingleton<IHudRendererService, HudRendererService>();
 builder.Services.AddHostedService<ExportCleanupService>();
 builder.Services.AddSignalR();
 #if WINDOWS
 builder.Services.AddTransient<IFfProbeService, FfProbeServiceWindows>();
+builder.Services.AddSingleton<IHudRendererService, HudRendererService>();
 #elif DOCKER
 builder.Services.AddTransient<IFfProbeService, FfProbeServiceDocker>();
+builder.Services.AddSingleton<IHudRendererService, HudRendererService>();
+#elif LINUX
+builder.Services.AddTransient<IFfProbeService, FfProbeServiceLinux>();
+builder.Services.AddSingleton<IHudRendererService, HudRendererService>();
 #endif
 
 var app = builder.Build();

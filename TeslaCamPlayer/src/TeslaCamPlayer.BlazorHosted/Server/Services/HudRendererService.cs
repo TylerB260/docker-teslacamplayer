@@ -14,8 +14,20 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services;
 
 public class HudRendererService : IHudRendererService
 {
-    private const string PythonExecutable = "python3";
-    private const string HudRendererScript = "/app/teslacamplayer/lib/hud_renderer.py";
+    protected virtual string PythonExecutable =>
+#if DOCKER
+        "python3";
+#else
+        // Windows typically uses "python", Linux uses "python3"
+        OperatingSystem.IsWindows() ? "python" : "python3";
+#endif
+
+    protected virtual string HudRendererScript =>
+#if DOCKER
+        "/app/teslacamplayer/lib/hud_renderer.py";
+#else
+        Path.Combine(AppContext.BaseDirectory, "lib", "hud_renderer.py");
+#endif
 
     public async Task<string> RenderHudFramesToDirectoryAsync(
         List<SeiMetadata> seiMessages,

@@ -48,3 +48,8 @@ public class FfProbeServiceDocker : FfProbeService
 {
     protected override string ExePath { get; } = "ffprobe";
 }
+
+public class FfProbeServiceLinux : FfProbeService
+{
+    protected override string ExePath { get; } = "ffprobe";
+}

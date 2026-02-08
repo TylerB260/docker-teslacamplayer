@@ -55,20 +55,48 @@ This project leverages a modern technology stack to provide an efficient and sca
 
 The WebUI can be found at `http://your-ip:5000`, this app is a modified fork of [Rene-Sackers/TeslaCamPlayer](https://github.com/Rene-Sackers/TeslaCamPlayer) with an updated UI, delete button and some other tweaks.
 
-## Windows (Native Executable)
+## Portable Distribution Builds
 
-Prefer to run the player directly on Windows? The repository now ships with a publish profile that produces a self-contained `TeslaCamPlayer.BlazorHosted.Server.exe` without needing Docker or a separate .NET runtime.
+Prefer to run the player natively without Docker? The repository includes build scripts that create portable distributions for Windows and Linux.
 
-1. Install the [.NET 8 SDK](https://dotnet.microsoft.com/download).
-2. From the repo root run:
-   ```bash
-   dotnet publish TeslaCamPlayer/src/TeslaCamPlayer.BlazorHosted/Server/TeslaCamPlayer.BlazorHosted.Server.csproj -c Release -p:PublishProfile=win-x64
-   ```
-3. Open the publish output at `TeslaCamPlayer/src/TeslaCamPlayer.BlazorHosted/Server/bin/Release/net8.0/win-x64/publish`.
-4. Update the generated `appsettings.json` (or provide environment variables) so `ClipsRootPath` points to your local TeslaCam folder, e.g. `D:\\TeslaCam`.
-5. Keep the folder contents together (the `lib\ffprobe.exe` helper ships alongside the executable), then launch `TeslaCamPlayer.BlazorHosted.Server.exe` and browse to `http://localhost:5000`.
+### Windows Portable Build
 
-You can zip this folder and move it to another Windows system—everything required to run the app is included in the publish output.
+```powershell
+.\build-windows.ps1
+```
+
+Creates `dist/TeslaCamPlayer-Windows-x64.zip` containing:
+- Self-contained executable (no .NET SDK required)
+- All runtime dependencies
+- Setup and run scripts
+- Sample configuration
+
+**Requirements:** FFmpeg, Python 3.8+, and Pillow library (see `README.txt` in the ZIP for details)
+
+### Linux Portable Build
+
+```bash
+chmod +x build-linux.sh
+./build-linux.sh
+```
+
+Creates `dist/TeslaCamPlayer-Linux-x64.tar.gz` containing:
+- Self-contained executable (no .NET SDK required)
+- All runtime dependencies
+- Setup and run scripts
+- Sample configuration
+
+**Requirements:** ffmpeg, python3, and Pillow library (see `README.md` in the archive for details)
+
+### Docker Build (Existing)
+
+```bash
+docker build -t teslacamplayer .
+# Or use docker compose
+docker compose up
+```
+
+See `DISTRIBUTION-README.md` in each portable archive for complete setup instructions and troubleshooting.
 
 ## Usage
 
