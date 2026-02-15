@@ -338,6 +338,10 @@ public partial class ClipsService : IClipsService
                 totalEventCount,
                 batchNumber);
         }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Event indexing failed with an unhandled exception.");
+        }
         finally
         {
             _refreshProgressService.Complete();
@@ -504,15 +508,49 @@ public partial class ClipsService : IClipsService
         }
     }
 
-    private IEnumerable<string> EnumerateCandidatePaths(Settings settings)
+    private List<string> EnumerateCandidatePaths(Settings settings)
     {
-        foreach (var path in Directory.EnumerateFiles(settings.ClipsRootPath, "*.mp4", SearchOption.AllDirectories))
+        var rootPath = settings.ClipsRootPath;
+        Log.Information("Scanning for video files in {ClipsRootPath}...", rootPath);
+
+        if (!Directory.Exists(rootPath))
+        {
+            Log.Warning("ClipsRootPath does not exist: {ClipsRootPath}", rootPath);
+            return new List<string>();
+        }
+
+        var allMp4Files = Directory.EnumerateFiles(rootPath, "*.mp4", SearchOption.AllDirectories).ToList();
+        Log.Information("Found {TotalMp4Count} .mp4 files in {ClipsRootPath}.", allMp4Files.Count, rootPath);
+
+        if (allMp4Files.Count == 0)
+            return new List<string>();
+
+        var matched = new List<string>();
+        var skippedSamples = new List<string>();
+
+        foreach (var path in allMp4Files)
         {
             if (FileNameRegex.IsMatch(path))
             {
-                yield return path;
+                matched.Add(path);
+            }
+            else if (skippedSamples.Count < 5)
+            {
+                skippedSamples.Add(path);
             }
         }
+
+        if (skippedSamples.Count > 0)
+        {
+            Log.Warning(
+                "Skipped {SkippedCount} .mp4 files that did not match the expected TeslaCam naming pattern. Samples: {Samples}",
+                allMp4Files.Count - matched.Count,
+                skippedSamples);
+        }
+
+        Log.Information("Matched {MatchedCount} of {TotalCount} .mp4 files to TeslaCam naming pattern.", matched.Count, allMp4Files.Count);
+
+        return matched;
     }
 
     private static void PerformGarbageCollection(string reason)
