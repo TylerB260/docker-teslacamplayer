@@ -14,4 +14,6 @@ public interface IClipsService
         DateTime? toDate = null);
 
     Task<DateTime[]> GetAvailableDatesAsync(ClipType[]? clipTypes = null);
+
+    Task<int> GetClipIndexByDateAsync(DateTime date, ClipType[]? clipTypes = null);
 }

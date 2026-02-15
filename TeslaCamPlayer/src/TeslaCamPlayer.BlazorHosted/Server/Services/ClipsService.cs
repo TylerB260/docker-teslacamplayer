@@ -153,6 +153,11 @@ public partial class ClipsService : IClipsService
         return dates.ToArray();
     }
 
+    public async Task<int> GetClipIndexByDateAsync(DateTime date, ClipType[]? clipTypes = null)
+    {
+        return await _clipIndexRepository.GetEventIndexByDateAsync(date, clipTypes);
+    }
+
     private Clip[] BuildClipsFromVideoFiles(
         IReadOnlyList<VideoFile> videoFiles,
         IReadOnlyList<EventFolderInfo> eventFolders)

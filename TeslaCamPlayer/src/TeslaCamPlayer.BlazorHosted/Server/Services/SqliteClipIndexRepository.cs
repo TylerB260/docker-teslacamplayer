@@ -450,6 +450,55 @@ public class SqliteClipIndexRepository : IClipIndexRepository
         return results;
     }
 
+    public async Task<int> GetEventIndexByDateAsync(DateTime date, ClipType[]? clipTypes = null)
+    {
+        await EnsureInitializedAsync();
+
+        await using var connection = new SqliteConnection(ConnectionString);
+        await connection.OpenAsync();
+
+        await using var command = connection.CreateCommand();
+
+        var whereClauses = new List<string>();
+        if (clipTypes is { Length: > 0 })
+        {
+            var typeParams = string.Join(", ", clipTypes.Select((_, i) => $"$type{i}"));
+            whereClauses.Add($"clip_type IN ({typeParams})");
+            for (int i = 0; i < clipTypes.Length; i++)
+            {
+                var param = command.CreateParameter();
+                param.ParameterName = $"$type{i}";
+                param.Value = (int)clipTypes[i];
+                command.Parameters.Add(param);
+            }
+        }
+
+        var whereClause = whereClauses.Count > 0 ? $"WHERE {string.Join(" AND ", whereClauses)}" : "";
+
+        // The list is ORDER BY latest_ticks DESC, so the index of the first event on the
+        // target date equals the number of events whose latest_ticks is strictly greater
+        // than the end of that date (i.e. events that appear before it in the list).
+        var endOfDayTicks = date.Date.AddDays(1).Ticks;
+
+        var endOfDayParam = command.CreateParameter();
+        endOfDayParam.ParameterName = "$endOfDayTicks";
+        endOfDayParam.Value = endOfDayTicks;
+        command.Parameters.Add(endOfDayParam);
+
+        // Count distinct event folders whose latest_ticks >= endOfDayTicks (strictly after the target date)
+        command.CommandText = $@"
+            SELECT COUNT(*) FROM (
+                SELECT event_folder, MAX(start_ticks) as latest_ticks
+                FROM video_files
+                {whereClause}
+                GROUP BY event_folder
+                HAVING latest_ticks >= $endOfDayTicks
+            )";
+
+        var result = await command.ExecuteScalarAsync();
+        return Convert.ToInt32(result);
+    }
+
     private async Task EnsureInitializedAsync()
     {
         if (_initialized)

@@ -19,7 +19,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Pages;
 
 public partial class Index : ComponentBase, IAsyncDisposable
 {
-    private const int EventItemHeight = 60;
+    private const int EventItemHeight = 82;
 
     [Inject]
     private HttpClient HttpClient { get; set; }
@@ -679,14 +679,42 @@ public partial class Index : ComponentBase, IAsyncDisposable
         if (!pickedDate.HasValue || _ignoreDatePicked == pickedDate)
             return;
 
-        // Find a loaded clip at this date, or try to load one
-        var firstClipAtDate = _loadedClips.Values.FirstOrDefault(c => c.StartDate.Date == pickedDate);
+        // Find the first loaded clip at this date (lowest index = newest event on that date in DESC list)
+        var firstClipAtDate = _loadedClips
+            .Where(kvp => kvp.Value.StartDate.Date == pickedDate)
+            .OrderBy(kvp => kvp.Key)
+            .Select(kvp => kvp.Value)
+            .FirstOrDefault();
         if (firstClipAtDate != null)
         {
             await SetActiveClip(firstClipAtDate);
             await ScrollListToActiveClip();
         }
-        await Task.Delay(500);
+        else
+        {
+            // Clip not loaded yet — ask server for its index and scroll there
+            try
+            {
+                var types = GetSelectedClipTypes();
+                var typesQuery = types.Length > 0 ? string.Join("&", types.Select(t => $"types={t}")) : "";
+                var url = $"Api/GetClipIndexByDate?date={pickedDate.Value:yyyy-MM-dd}";
+                if (!string.IsNullOrEmpty(typesQuery))
+                    url += "&" + typesQuery;
+
+                var index = await HttpClient.GetFromNewtonsoftJsonAsync<int>(url);
+                if (index >= 0 && index < _totalClipCount)
+                {
+                    var listBoundingRect = await _eventsList.MudGetBoundingClientRectAsync();
+                    var top = (int)(index * EventItemHeight - listBoundingRect.Height / 2 + EventItemHeight / 2);
+                    await JsRuntime.InvokeVoidAsync("HTMLElement.prototype.scrollTo.call", _eventsList,
+                        new ScrollToOptions { Behavior = "smooth", Top = Math.Max(0, top) });
+                }
+            }
+            catch
+            {
+                // If the API call fails, ignore — calendar already shows the date
+            }
+        }
     }
 
     private async Task ScrollListToActiveClip()
@@ -732,8 +760,8 @@ public partial class Index : ComponentBase, IAsyncDisposable
         {
             var scrollTop = await JsRuntime.InvokeAsync<double>("getProperty", _eventsList, "scrollTop");
             var listBoundingRect = await _eventsList.MudGetBoundingClientRectAsync();
-            var centerScrollPosition = scrollTop + listBoundingRect.Height / 2 + EventItemHeight / 2;
-            var itemIndex = (int)centerScrollPosition / EventItemHeight;
+            var centerScrollPosition = scrollTop + listBoundingRect.Height / 2;
+            var itemIndex = (int)(centerScrollPosition / EventItemHeight);
 
             // Try to find the clip at this index from loaded clips
             if (_loadedClips.TryGetValue(Math.Min(_totalClipCount - 1, itemIndex), out var atClip))

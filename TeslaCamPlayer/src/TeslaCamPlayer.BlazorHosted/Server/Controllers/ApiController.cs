@@ -51,6 +51,10 @@ public class ApiController : ControllerBase
         => await _clipsService.GetAvailableDatesAsync(types);
 
     [HttpGet]
+    public async Task<int> GetClipIndexByDate(DateTime date, [FromQuery] ClipType[]? types = null)
+        => await _clipsService.GetClipIndexByDateAsync(date, types);
+
+    [HttpGet]
     public RefreshStatus GetRefreshStatus()
         => _refreshProgressService.GetStatus();
 

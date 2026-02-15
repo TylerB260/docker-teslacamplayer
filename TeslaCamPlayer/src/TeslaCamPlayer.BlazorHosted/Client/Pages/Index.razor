@@ -100,6 +100,7 @@
                         @if (context != null)
                         {
                             <div class="event @(_activeClip == context ? "event--active" : null)" @key="@context.EndDate"
+                                 style="height: 82px; box-sizing: border-box; overflow: hidden; margin: 0; padding: 5px;"
                                  @onclick="@(() => SetActiveClip(context))">
                                 <img class="thumbnail"
                                      src="@(!string.IsNullOrWhiteSpace(context.ThumbnailUrl) ? context.ThumbnailUrl : "/img/no-thumbnail.png")"
@@ -125,7 +126,7 @@
                         }
                     </ItemContent>
                     <Placeholder>
-                        <div class="event">
+                        <div class="event" style="height: 82px; box-sizing: border-box; overflow: hidden; margin: 0; padding: 5px;">
                             <MudSkeleton Class="thumbnail" Width="128px" Height="72px" />
                             <div class="details ml-2">
                                 <div class="icons">

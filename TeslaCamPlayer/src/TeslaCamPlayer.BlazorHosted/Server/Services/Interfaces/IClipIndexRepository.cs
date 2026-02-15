@@ -25,6 +25,8 @@ public interface IClipIndexRepository
         DateTime? toDate = null);
 
     Task<IReadOnlyList<DateTime>> GetAvailableDatesAsync(ClipType[]? clipTypes = null);
+
+    Task<int> GetEventIndexByDateAsync(DateTime date, ClipType[]? clipTypes = null);
 }
 
 public class EventFolderInfo
