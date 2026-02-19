@@ -99,7 +99,7 @@
                     <ItemContent>
                         @if (context != null)
                         {
-                            <div class="event @(_activeClip == context ? "event--active" : null)" @key="@context.EndDate"
+                            <div class="event @(_activeClip?.DirectoryPath == context.DirectoryPath ? "event--active" : null)" @key="@context.DirectoryPath"
                                  style="height: 82px; box-sizing: border-box; overflow: hidden; margin: 0; padding: 5px;"
                                  @onclick="@(() => SetActiveClip(context))">
                                 <img class="thumbnail"

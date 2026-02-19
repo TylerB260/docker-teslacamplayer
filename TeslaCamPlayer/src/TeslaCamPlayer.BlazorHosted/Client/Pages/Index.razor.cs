@@ -132,6 +132,15 @@ public partial class Index : ComponentBase, IAsyncDisposable
                 _loadedClips[request.StartIndex + i] = response.Items[i];
             }
 
+            // Resync _activeClip to the new instance if it appears in this batch,
+            // so that reference-equality code (scroll, navigation) stays correct after a refresh.
+            if (_activeClip != null)
+            {
+                var refreshed = Array.Find(response.Items, c => c.DirectoryPath == _activeClip.DirectoryPath);
+                if (refreshed != null)
+                    _activeClip = refreshed;
+            }
+
             // Set first clip as active if none selected
             if (_activeClip == null && response.Items.Length > 0 && request.StartIndex == 0)
             {
@@ -723,8 +732,9 @@ public partial class Index : ComponentBase, IAsyncDisposable
             return;
 
         // Find index in loaded clips
-        var index = _loadedClips.FirstOrDefault(kvp => kvp.Value == _activeClip).Key;
-        if (index == 0 && _loadedClips.Count > 0 && _loadedClips.Values.First() != _activeClip)
+        var activePath = _activeClip?.DirectoryPath;
+        var index = _loadedClips.FirstOrDefault(kvp => kvp.Value.DirectoryPath == activePath).Key;
+        if (index == 0 && _loadedClips.Count > 0 && _loadedClips.Values.First().DirectoryPath != activePath)
         {
             // Active clip not found in loaded clips, can't scroll to it
             return;
@@ -786,7 +796,8 @@ public partial class Index : ComponentBase, IAsyncDisposable
             return;
 
         // Find current index and go to next one (older = higher index since sorted by date desc)
-        var currentIndex = _loadedClips.FirstOrDefault(kvp => kvp.Value == _activeClip).Key;
+        var activePathPrev = _activeClip?.DirectoryPath;
+        var currentIndex = _loadedClips.FirstOrDefault(kvp => kvp.Value.DirectoryPath == activePathPrev).Key;
         var nextIndex = currentIndex + 1;
 
         if (_loadedClips.TryGetValue(nextIndex, out var previous))
@@ -802,7 +813,8 @@ public partial class Index : ComponentBase, IAsyncDisposable
             return;
 
         // Find current index and go to previous one (newer = lower index since sorted by date desc)
-        var currentIndex = _loadedClips.FirstOrDefault(kvp => kvp.Value == _activeClip).Key;
+        var activePathNext = _activeClip?.DirectoryPath;
+        var currentIndex = _loadedClips.FirstOrDefault(kvp => kvp.Value.DirectoryPath == activePathNext).Key;
         var prevIndex = currentIndex - 1;
 
         if (prevIndex >= 0 && _loadedClips.TryGetValue(prevIndex, out var next))
